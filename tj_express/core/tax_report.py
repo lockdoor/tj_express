@@ -4,6 +4,7 @@ import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.pagebreak import Break
 from pathlib import Path
 from tj_express.core.dbf import read_dbf
 from tj_express.config import EXPRESS_PATH
@@ -211,8 +212,9 @@ def export_tax_report_excel(company_folder: str, year: int, month: int, output_p
     ws = wb.active
     ws.title = f"ขาย{THAI_MONTHS[month][:3]}{str(year + 543)[2:]}"
     
-    # Enable grid lines
+    # Enable grid lines and set print titles (repeat rows 1 to 8 on each page)
     ws.views.sheetView[0].showGridLines = True
+    ws.print_title_rows = '1:8'
     
     # Fonts & Styles
     font_family = "Angsana New"
@@ -313,9 +315,21 @@ def export_tax_report_excel(company_folder: str, year: int, month: int, output_p
     ws.merge_cells("H7:H8")
     ws.merge_cells("I7:I8")
             
-    # Data Rows
+    # Data Rows & Page Summary Logic
     current_row = 9
-    for rec in records:
+    page_start_row = 9
+    items_on_page = 0
+    page_sum_rows = []
+    
+    summary_border = Border(
+        left=thin_border_side,
+        right=thin_border_side,
+        top=thin_border_side,
+        bottom=Side(style='medium', color='000000') # bottom medium border as in Excel
+    )
+    
+    for idx, rec in enumerate(records):
+        ws.row_dimensions[current_row].height = 27
         ws.cell(row=current_row, column=1, value=rec["no"]).alignment = center_align
         
         # Format Date
@@ -334,44 +348,97 @@ def export_tax_report_excel(company_folder: str, year: int, month: int, output_p
         c_tax.alignment = center_align
         c_tax.number_format = '@'  # Force text format
         
-        # Head office or branch not use for now
-        # ws.cell(row=current_row, column=6, value="X" if rec["is_hq"] else "").alignment = center_align
-        
-        # Branch code not use for now
-        # c_br = ws.cell(row=current_row, column=7, value=rec["branch_code"])
-        # c_br.alignment = center_align
-        # c_br.number_format = '@'
-        
         # Numeric values
         c_amt = ws.cell(row=current_row, column=8, value=rec["amount"])
         c_amt.number_format = '#,##0.00;(#,##0.00);"-";@'
         c_amt.alignment = right_align
         
-        # VAT calculated via formula or direct float?
-        # In Express report template, they calculate it via formula like '=H9*7%'
         c_vat = ws.cell(row=current_row, column=9, value=f"=H{current_row}*7%")
         c_vat.number_format = '#,##0.00;(#,##0.00);"-";@'
         c_vat.alignment = right_align
         
+        # Set fonts and borders for standard data row
         for col_idx in range(1, 10):
             cell = ws.cell(row=current_row, column=col_idx)
             cell.font = body_font
             cell.border = thin_border
             
         current_row += 1
+        items_on_page += 1
         
-    # Summary Totals Row
+        # Check if we reached the maximum of 33 items per page
+        if items_on_page == 33:
+            # Write "รวมแต่ละหน้า" row
+            ws.row_dimensions[current_row].height = 20
+            ws.cell(row=current_row, column=2, value="รวมแต่ละหน้า").alignment = left_align
+            
+            c_pamt = ws.cell(row=current_row, column=8, value=f"=SUM(H{page_start_row}:H{current_row-1})")
+            c_pamt.number_format = '#,##0.00;(#,##0.00);"-";@'
+            c_pamt.alignment = right_align
+            c_pamt.font = summary_font
+            
+            c_pvat = ws.cell(row=current_row, column=9, value=f"=SUM(I{page_start_row}:I{current_row-1})")
+            c_pvat.number_format = '#,##0.00;(#,##0.00);"-";@'
+            c_pvat.alignment = right_align
+            c_pvat.font = summary_font
+            
+            for col_idx in range(1, 10):
+                cell = ws.cell(row=current_row, column=col_idx)
+                cell.font = summary_font if col_idx in [8, 9] else body_font
+                cell.border = summary_border
+                
+            page_sum_rows.append(current_row)
+            
+            # Add print page break after the page summary row if there are more records
+            if idx < len(records) - 1:
+                ws.row_breaks.append(Break(id=current_row))
+                
+            current_row += 1
+            items_on_page = 0
+            page_start_row = current_row
+            
+    # Write page summary for the last page if it was not exactly 33 items
+    if items_on_page > 0:
+        ws.row_dimensions[current_row].height = 20
+        ws.cell(row=current_row, column=2, value="รวมแต่ละหน้า").alignment = left_align
+        
+        c_pamt = ws.cell(row=current_row, column=8, value=f"=SUM(H{page_start_row}:H{current_row-1})")
+        c_pamt.number_format = '#,##0.00;(#,##0.00);"-";@'
+        c_pamt.alignment = right_align
+        c_pamt.font = summary_font
+        
+        c_pvat = ws.cell(row=current_row, column=9, value=f"=SUM(I{page_start_row}:I{current_row-1})")
+        c_pvat.number_format = '#,##0.00;(#,##0.00);"-";@'
+        c_pvat.alignment = right_align
+        c_pvat.font = summary_font
+        
+        for col_idx in range(1, 10):
+            cell = ws.cell(row=current_row, column=col_idx)
+            cell.font = summary_font if col_idx in [8, 9] else body_font
+            cell.border = summary_border
+            
+        page_sum_rows.append(current_row)
+        current_row += 1
+
+    # Leave one blank row
+    ws.row_dimensions[current_row].height = 20
+    current_row += 1
+    
+    # Write Final "รวมทั้งหมด" Row
+    ws.row_dimensions[current_row].height = 20
     ws.cell(row=current_row, column=1, value="รวมทั้งหมด").alignment = left_align
     ws.cell(row=current_row, column=1).font = summary_font
     
-    # Formula for sums
-    c_tot_amt = ws.cell(row=current_row, column=8, value=f"=SUM(H9:H{current_row-1})")
+    # Formula for overall sum of page summaries
+    sum_amt_formula = "=" + "+".join(f"H{r}" for r in page_sum_rows) if page_sum_rows else "0.00"
+    c_tot_amt = ws.cell(row=current_row, column=8, value=sum_amt_formula)
     c_tot_amt.number_format = '#,##0.00;(#,##0.00);"-";@'
     c_tot_amt.alignment = right_align
     c_tot_amt.font = summary_font
     c_tot_amt.border = double_bottom_border
     
-    c_tot_vat = ws.cell(row=current_row, column=9, value=f"=SUM(I9:I{current_row-1})")
+    sum_vat_formula = "=" + "+".join(f"I{r}" for r in page_sum_rows) if page_sum_rows else "0.00"
+    c_tot_vat = ws.cell(row=current_row, column=9, value=sum_vat_formula)
     c_tot_vat.number_format = '#,##0.00;(#,##0.00);"-";@'
     c_tot_vat.alignment = right_align
     c_tot_vat.font = summary_font
