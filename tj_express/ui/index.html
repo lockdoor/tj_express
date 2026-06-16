@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tj_express - Dashboard</title>
+    <!-- Google Fonts: Outfit (modern geometric) & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="app-header">
+            <div class="logo-section">
+                <span class="logo-icon">⚡</span>
+                <h1>tj_express</h1>
+                <span class="badge">v0.1.0</span>
+            </div>
+            <nav class="app-nav">
+                <button class="nav-btn active" data-tab="tax">รายงานภาษีขาย</button>
+                <button class="nav-btn" data-tab="stock">ตรวจสอบสินค้าคงคลัง</button>
+            </nav>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Sales Tax Tab -->
+            <section id="tax-tab" class="tab-content active">
+                <div class="control-panel">
+                    <div class="panel-header">
+                        <h2>ตัวเลือกรายงานภาษีขาย</h2>
+                        <p>กรุณาระบุเดือน ปี และโฟลเดอร์ของฐานข้อมูล Express ที่ต้องการดึงข้อมูล</p>
+                    </div>
+                    
+                    <form id="tax-form" class="filter-form">
+                        <!-- Company Directory -->
+                        <div class="form-group">
+                            <label for="company-select">ฐานข้อมูล / โฟลเดอร์บริษัท</label>
+                            <div class="select-wrapper">
+                                <select id="company-select" required>
+                                    <option value="" disabled selected>กำลังโหลดฐานข้อมูล...</option>
+                                </select>
+                            </div>
+                            <!-- Fallback input for manual path entering if needed -->
+                            <input type="text" id="company-manual" placeholder="หรือพิมพ์ชื่อโฟลเดอร์โดยตรง (เช่น RINARA68)" class="mt-2 hidden">
+                            <button type="button" id="toggle-manual-btn" class="text-link">พิมพ์ชื่อโฟลเดอร์เอง</button>
+                        </div>
+
+                        <!-- Year -->
+                        <div class="form-group">
+                            <label for="year-select">ปีภาษี (พ.ศ.)</label>
+                            <div class="select-wrapper">
+                                <select id="year-select" required>
+                                    <!-- Populated dynamically via JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Month -->
+                        <div class="form-group">
+                            <label for="month-select">เดือน</label>
+                            <div class="select-wrapper">
+                                <select id="month-select" required>
+                                    <option value="1">มกราคม</option>
+                                    <option value="2">กุมภาพันธ์</option>
+                                    <option value="3">มีนาคม</option>
+                                    <option value="4">เมษายน</option>
+                                    <option value="5">พฤษภาคม</option>
+                                    <option value="6">มิถุนายน</option>
+                                    <option value="7">กรกฎาคม</option>
+                                    <option value="8">สิงหาคม</option>
+                                    <option value="9">กันยายน</option>
+                                    <option value="10">ตุลาคม</option>
+                                    <option value="11">พฤศจิกายน</option>
+                                    <option value="12">ธันวาคม</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="primary-btn" id="generate-btn">
+                                <span>ดึงข้อมูลรายงาน</span>
+                            </button>
+                            <button type="button" class="secondary-btn hidden" id="download-btn">
+                                📥 ดาวน์โหลด Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results-panel card hidden" id="results-panel">
+                    <div class="results-header">
+                        <div class="company-profile" id="company-profile">
+                            <h3 id="profile-name">-</h3>
+                            <p id="profile-tax-id">เลขผู้เสียภาษี: -</p>
+                            <p id="profile-address">ที่อยู่: -</p>
+                        </div>
+                        <div class="search-box-wrapper">
+                            <input type="text" id="table-search" placeholder="🔍 ค้นหาในตาราง... (เลขที่, ชื่อบริษัท, เลขผู้เสียภาษี)">
+                        </div>
+                    </div>
+
+                    <!-- Table Wrapper -->
+                    <div class="table-container">
+                        <table class="report-table" id="report-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="text-center w-10">ลำดับที่</th>
+                                    <th colspan="2" class="text-center">ใบกำกับภาษี</th>
+                                    <th rowspan="2">ชื่อบริษัท/ผู้ซื้อสินค้า</th>
+                                    <th rowspan="2" class="text-center">เลขประจำตัวผู้เสียภาษี</th>
+                                    <th colspan="2" class="text-center">สถานประกอบการ</th>
+                                    <th rowspan="2" class="text-right">มูลค่าสินค้า/บริการ</th>
+                                    <th rowspan="2" class="text-right">ภาษีมูลค่าเพิ่ม</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-center border-sub">วัน/เดือน/ปี</th>
+                                    <th class="text-center border-sub">เลขที่</th>
+                                    <th class="text-center border-sub">สนญ.</th>
+                                    <th class="text-center border-sub">สาขา</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="summary-row">
+                                    <td colspan="7" class="text-right font-bold">รวมทั้งหมด</td>
+                                    <td id="total-amount-cell" class="text-right font-bold">-</td>
+                                    <td id="total-vat-cell" class="text-right font-bold">-</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state card" id="tax-empty-state">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">📊</div>
+                        <h3>ไม่มีข้อมูลที่จะแสดง</h3>
+                        <p>กรุณาเลือกโฟลเดอร์บริษัท ปี และเดือน จากนั้นกดปุ่มดึงข้อมูลรายงาน</p>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner Overlay -->
+                <div class="loading-overlay hidden" id="loading-overlay">
+                    <div class="spinner-container">
+                        <div class="spinner"></div>
+                        <p>กำลังอ่านไฟล์ข้อมูลและคำนวณรายงาน...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stock Tab -->
+            <section id="stock-tab" class="tab-content">
+                <div class="control-panel">
+                    <div class="panel-header">
+                        <h2>ตรวจสอบสินค้าคงคลัง (คลัง 01)</h2>
+                        <p>ดึงปริมาณยอดคงเหลือสินค้าจากไฟล์ STLOC.DBF และรายละเอียดสินค้าจาก STMAS.DBF</p>
+                    </div>
+
+                    <form id="stock-form" class="filter-form">
+                        <div class="form-group">
+                            <label for="stock-company-select">บริษัท</label>
+                            <div class="select-wrapper">
+                                <select id="stock-company-select" required>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="primary-btn" id="stock-btn">
+                                <span>ดึงยอดสินค้าคงคลัง</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Stock Results -->
+                <div class="results-panel card hidden" id="stock-results-panel">
+                    <div class="results-header">
+                        <h3>รายการสินค้าคงคลัง (คลัง 01)</h3>
+                        <div class="search-box-wrapper">
+                            <input type="text" id="stock-search" placeholder="🔍 ค้นหา... (รหัสสินค้า, ชื่อสินค้า)">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="report-table" id="stock-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-10">ลำดับ</th>
+                                    <th>รหัสสินค้า (SKU)</th>
+                                    <th>ชื่อสินค้า (ไทย)</th>
+                                    <th>ชื่อสินค้า (อังกฤษ)</th>
+                                    <th class="text-right">ยอดคงเหลือ (Balance)</th>
+                                    <th class="text-center">หน่วยนับ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state card" id="stock-empty-state">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">📦</div>
+                        <h3>ยังไม่มีการค้นหาข้อมูลสินค้า</h3>
+                        <p>กรุณาเลือกบริษัทและกดดึงข้อมูลด้านซ้าย</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

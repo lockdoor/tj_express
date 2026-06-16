@@ -1,0 +1,13 @@
+venv
+*.DS_Store
+*.ipynb
+__pycache__
+.env
+asset_dev/
+notebooks/
+secrets/express.env
+*.egg-info/
+build/
+dist/
+tj_express/outputs/*
+!tj_express/outputs/.gitkeep

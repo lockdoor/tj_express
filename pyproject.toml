@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tj_express"
+version = "0.1.0"
+description = "Sales tax report generator from Express DBF files"
+dependencies = [
+    "dbfread==2.0.7",
+    "numpy==2.4.6",
+    "openpyxl==3.1.5",
+    "pandas==3.0.3",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter==1.1.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["tj_express*"]
+exclude = ["venv*", "outputs*", "asset_dev*", "notebooks*", "docs*", "secrets*"]
