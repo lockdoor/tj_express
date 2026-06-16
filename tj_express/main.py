@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from tj_express.api.routes import router as api_router
-from tj_express.config import PORT, HOST
+from tj_express.config import PORT, HOST, COMPANIES
 
 app = FastAPI(
     title="tj_express", 
@@ -32,9 +32,15 @@ ui_path.mkdir(exist_ok=True)
 app.mount("/ui", StaticFiles(directory=str(ui_path)), name="ui")
 
 @app.get("/")
-def root_redirect():
-    """Redirects the base URL to the dashboard UI."""
-    return RedirectResponse(url="/ui/index.html")
+def read_root(request: Request):
+    """
+    Returns the online status and the configured companies list if requested by API,
+    otherwise redirects to the dashboard UI for browser users.
+    """
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return RedirectResponse(url="/ui/index.html")
+    return {"status": "online", "companies": list(COMPANIES.keys())}
 
 if __name__ == "__main__":
     import uvicorn
