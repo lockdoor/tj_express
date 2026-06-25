@@ -1,0 +1,15 @@
+services:
+  fastapi:
+    build: .
+    container_name: tj_express_fastapi
+    restart: always
+    environment:
+      IS_CONTAINER: ${IS_CONTAINER}
+      EXPRESS_PATH: ${EXPRESS_PATH}
+      COMPANIES: ${COMPANIES}
+      PORT: ${PORT}
+      HOST: ${HOST}
+    volumes:
+      - ${SERVERS_PATH}:/app/ExpressI:ro
+    ports:
+      - "${PORT}:${PORT}"
