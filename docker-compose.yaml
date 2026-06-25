@@ -7,9 +7,7 @@ services:
       IS_CONTAINER: ${IS_CONTAINER}
       EXPRESS_PATH: ${EXPRESS_PATH}
       COMPANIES: ${COMPANIES}
-      PORT: ${PORT}
-      HOST: ${HOST}
     volumes:
-      - ${SERVERS_PATH}:/app/ExpressI:ro
+      - "${SERVERS_PATH}:/app/ExpressI:ro"
     ports:
       - "${PORT}:${PORT}"
