@@ -1,6 +1,5 @@
 import os
 from fastapi import APIRouter, HTTPException
-import pandas as pd
 from tj_express.core.dbf import read_dbf
 from tj_express.config import EXPRESS_PATH, COMPANIES
 
@@ -8,6 +7,7 @@ router = APIRouter()
 
 @router.get("/{company_id}")
 def get_stock(company_id: str):
+    import pandas as pd
     """
     Reads STLOC.DBF and STMAS.DBF for the given company and returns SKU -> Balance for Stock 1 (01).
     """

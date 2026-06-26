@@ -7,10 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from tj_express.api.routes import router as api_router
 from tj_express.config import PORT, HOST, COMPANIES
 
+is_container = os.getenv("IS_CONTAINER", "FALSE") == "TRUE"
+
 app = FastAPI(
     title="tj_express", 
     description="Express ERP Bridge & Custom Report Engine",
-    version="0.1.0"
+    version="0.1.0",
+    openapi_url=None if is_container else "/openapi.json",
+    docs_url=None if is_container else "/docs",
+    redoc_url=None if is_container else "/redoc",
 )
 
 # CORS middleware for local development/external queries

@@ -1,20 +1,21 @@
 import os
 import datetime
-import pandas as pd
-from dbfread import DBF, FieldParser
 
-class SafeFieldParser(FieldParser):
-    def parseD(self, field, data):
-        try:
-            return datetime.date(int(data[:4]), int(data[4:6]), int(data[6:8]))
-        except ValueError:
-            return None
-
-def read_dbf(dbf_path: str) -> pd.DataFrame:
+def read_dbf(dbf_path: str) -> "pandas.DataFrame":
     """
     Reads a DBF file in a read-only manner and returns a pandas DataFrame.
     Gracefully handles encoding and missing memofiles.
     """
+    import pandas as pd
+    from dbfread import DBF, FieldParser
+
+    class SafeFieldParser(FieldParser):
+        def parseD(self, field, data):
+            try:
+                return datetime.date(int(data[:4]), int(data[4:6]), int(data[6:8]))
+            except ValueError:
+                return None
+
     if not os.path.exists(dbf_path):
         raise FileNotFoundError(f"DBF file not found: {dbf_path}")
     

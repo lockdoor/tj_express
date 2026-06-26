@@ -1,10 +1,5 @@
 import os
 import datetime
-import pandas as pd
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.pagebreak import Break
 from pathlib import Path
 from tj_express.core.dbf import read_dbf
 from tj_express.config import EXPRESS_PATH
@@ -73,6 +68,7 @@ def generate_tax_report(company_folder: str, year: int, month: int) -> dict:
     - ARMAS.DBF (Customers master)
     - ARTRNRM.DBF (Remarks/notes for custom client names/TAXIDs)
     """
+    import pandas as pd
     dbf_dir = Path(EXPRESS_PATH) / company_folder
     
     artrn_path = dbf_dir / "ARTRN.DBF"
@@ -204,6 +200,10 @@ def export_tax_report_excel(company_folder: str, year: int, month: int, output_p
     """
     Exports the sales tax report into a formatted Excel sheet matching the template.
     """
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.worksheet.pagebreak import Break
+
     data = generate_tax_report(company_folder, year, month)
     records = data["records"]
     company_info = data["company_info"]
