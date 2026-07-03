@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from tj_express.api.routes import router as api_router
-from tj_express.config import PORT, HOST, COMPANIES
+from tj_express.config import PORT, HOST, get_available_companies
 
 is_container = os.getenv("IS_CONTAINER", "FALSE") == "TRUE"
 
@@ -45,7 +45,7 @@ def read_root(request: Request):
     accept = request.headers.get("accept", "")
     if "text/html" in accept:
         return RedirectResponse(url="/ui/index.html")
-    return {"status": "online", "companies": list(COMPANIES.keys())}
+    return {"status": "online", "companies": get_available_companies()}
 
 if __name__ == "__main__":
     import uvicorn

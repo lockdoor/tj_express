@@ -64,14 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error("โหลดข้อมูลผู้ติดต่อตั้งค่าล้มเหลว");
             const data = await response.json();
 
-            companiesConfig = data.companies || {};
+            companiesConfig = data.companies || [];
 
             // Populate tax dropdown
             companySelect.innerHTML = "";
             stockCompanySelect.innerHTML = "";
 
-            const entries = Object.entries(companiesConfig);
-            if (entries.length === 0) {
+            if (!Array.isArray(companiesConfig) || companiesConfig.length === 0) {
                 // If no preconfigured companies, force manual mode
                 const emptyOpt = document.createElement("option");
                 emptyOpt.value = "";
@@ -81,17 +80,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Fallback to manual
                 toggleManualBtn.click();
             } else {
-                entries.forEach(([name, folder]) => {
+                companiesConfig.forEach(folder => {
                     // Tax dropdown
                     const opt = document.createElement("option");
                     opt.value = folder;
-                    opt.textContent = `${name} (${folder})`;
+                    opt.textContent = folder;
                     companySelect.appendChild(opt);
 
-                    // Stock dropdown (requires the company_id key, i.e., "TJ", "THAIJINTAN")
+                    // Stock dropdown
                     const sOpt = document.createElement("option");
-                    sOpt.value = name;
-                    sOpt.textContent = `${name} (${folder})`;
+                    sOpt.value = folder;
+                    sOpt.textContent = folder;
                     stockCompanySelect.appendChild(sOpt);
                 });
             }

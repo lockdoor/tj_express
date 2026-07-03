@@ -12,7 +12,14 @@ EXPRESS_PATH = os.getenv("EXPRESS_PATH", "")
 PORT = int(os.getenv("PORT", 8001))
 HOST = os.getenv("HOST", "0.0.0.0")
 
-try:
-    COMPANIES = json.loads(os.getenv("COMPANIES", "{}"))
-except Exception:
-    COMPANIES = {}
+def get_available_companies() -> list[str]:
+    """Dynamically lists all subdirectories inside EXPRESS_PATH."""
+    if not EXPRESS_PATH or not os.path.isdir(EXPRESS_PATH):
+        return []
+    try:
+        return [
+            d for d in os.listdir(EXPRESS_PATH)
+            if os.path.isdir(os.path.join(EXPRESS_PATH, d)) and not d.startswith(".")
+        ]
+    except Exception:
+        return []

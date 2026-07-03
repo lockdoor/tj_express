@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 from tj_express.core.tax_report import generate_tax_report, export_tax_report_excel, THAI_MONTHS
 
-from tj_express.config import EXPRESS_PATH, COMPANIES
+from tj_express.config import EXPRESS_PATH, get_available_companies
 
 router = APIRouter()
 
@@ -13,7 +13,7 @@ def get_app_config():
     """Returns the list of configured companies and the base Express path."""
     return {
         "express_path": EXPRESS_PATH,
-        "companies": COMPANIES
+        "companies": get_available_companies()
     }
 
 @router.get("/report")
@@ -23,6 +23,10 @@ def get_tax_report(
     month: int = Query(..., description="Month number (1-12)", ge=1, le=12)
 ):
     """Generates and returns the sales tax report in JSON format."""
+    company_dir = os.path.join(EXPRESS_PATH, company_folder)
+    if not os.path.isdir(company_dir):
+        raise HTTPException(status_code=404, detail=f"Company directory '{company_folder}' not found")
+
     year_ad = year_be - 543
     try:
         data = generate_tax_report(company_folder, year_ad, month)
@@ -39,6 +43,10 @@ def download_tax_report(
     month: int = Query(..., description="Month number (1-12)", ge=1, le=12)
 ):
     """Generates the sales tax report and downloads it as a formatted Excel spreadsheet."""
+    company_dir = os.path.join(EXPRESS_PATH, company_folder)
+    if not os.path.isdir(company_dir):
+        raise HTTPException(status_code=404, detail=f"Company directory '{company_folder}' not found")
+
     year_ad = year_be - 543
     
     # Ensure outputs directory exists in project root

@@ -1,7 +1,7 @@
 import os
 from fastapi import APIRouter, HTTPException
 from tj_express.core.dbf import read_dbf
-from tj_express.config import EXPRESS_PATH, COMPANIES
+from tj_express.config import EXPRESS_PATH
 
 router = APIRouter()
 
@@ -10,10 +10,9 @@ def get_account_chart(company_id: str):
     """
     Return list of accounts from the given company, GLACC.DBF (Genaral Ledger Account Chart)
     """
-    if company_id not in COMPANIES:
-        raise HTTPException(status_code=404, detail=f"Company '{company_id}' not configured")
-    
-    data_path = os.path.join(EXPRESS_PATH, COMPANIES[company_id])       
+    data_path = os.path.join(EXPRESS_PATH, company_id)       
+    if not os.path.isdir(data_path):
+        raise HTTPException(status_code=404, detail=f"Company directory '{company_id}' not found")
     dbf_path = os.path.join(data_path, "GLACC.DBF")
     
     try:
