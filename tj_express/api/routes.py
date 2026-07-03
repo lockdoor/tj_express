@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from tj_express.api.endpoints import stock, tax
+from tj_express.api.endpoints import stock, tax, account
 
 from tj_express.config import COMPANIES
 
@@ -13,3 +13,4 @@ def api_root():
 
 router.include_router(stock.router, prefix="/stock", tags=["Stock"])
 router.include_router(tax.router, prefix="/tax", tags=["Tax"])
+router.include_router(account.router, prefix="/account", tags=["Account"])
