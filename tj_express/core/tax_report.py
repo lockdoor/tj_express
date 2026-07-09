@@ -101,7 +101,7 @@ def generate_tax_report(company_folder: str, year: int, month: int) -> dict:
         }
         
     # Sort by DOCDAT
-    filtered = filtered.sort_values('DOCDAT')
+    filtered = filtered.sort_values(by=['DOCDAT', 'DOCNUM'])
     
     # Merge with ARMAS
     merged = pd.merge(filtered, armas, on='CUSCOD', how='left', suffixes=('', '_armas'))
@@ -353,7 +353,7 @@ def export_tax_report_excel(company_folder: str, year: int, month: int, output_p
         c_amt.number_format = '#,##0.00;(#,##0.00);"-";@'
         c_amt.alignment = right_align
         
-        c_vat = ws.cell(row=current_row, column=9, value=f"=H{current_row}*7%")
+        c_vat = ws.cell(row=current_row, column=9, value=rec["vat"])
         c_vat.number_format = '#,##0.00;(#,##0.00);"-";@'
         c_vat.alignment = right_align
         
